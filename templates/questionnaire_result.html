@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Results — Sense AI</title>
+
+  <!-- Page stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}">
+</head>
+<body>
+  <div class="nav navbar-title">SenseAI — Result</div>
+
+  <div class="wrap">
+    <div class="card">
+
+      {% if result.error %}
+      <div class="err">
+        <strong>⚠️ Error:</strong> {{ result.error }}
+      </div>
+
+      {% else %}
+
+      <!-- Score / overall numbers -->
+
+
+      <div class="row" style="margin-top: 0; gap: 12px; flex-wrap: wrap;">
+        <div class="risk-indicator {{ 'risk-low' if result.risk_level == 'Low' else 'risk-medium' if result.risk_level == 'Medium' else 'risk-high' }}">
+          <span>Risk Level:</span>
+          <strong>{{ result.risk_level }}</strong>
+        </div>
+
+        <div class="probability-badge">
+          <span>AQ-10 Score:</span>
+          <strong>{{ result.aq10_score }}/10</strong>
+        </div>
+      </div>
+
+      <!-- Binary model prediction -->
+      {% if result.prediction is defined %}
+      <div class="prediction-badge {{ 'prediction-positive' if result.prediction == 1 else 'prediction-negative' }}">
+        <span>Model Prediction:</span>
+        <strong>
+          {{ "Positive" if result.prediction == 1 else "Negative" }}
+        </strong>
+      </div>
+      {% endif %}
+
+      <!-- Personalized guidance to the user -->
+      <div class="recommendation">
+        <p>{{ result.user_message }}</p>
+      </div>
+
+      <!-- Optional breakdown / interpretation -->
+
+
+      {% endif %}
+
+      <!-- Actions -->
+      <div class="row">
+        <a class="btn" href="/">
+          <span>←</span>
+          Back to Recording
+        </a>
+
+        <a class="btn" href="/questionnaire?section_id={{ section_id }}">
+          <span>↻</span>
+          Retake Questionnaire
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

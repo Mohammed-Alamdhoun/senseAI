@@ -1,0 +1,455 @@
+    :root {
+        --bg: #1a1a2e;
+        --fg: #e6e6e6;
+        --muted: #a0a0a0;
+        --accent: #4cc9f0;
+        --card-bg: #16213e;
+        --ok: #4ade80;
+        --warn: #f59e0b;
+        --danger: #ef4444;
+        --secondary: #6366f1;
+        --glass-bg: rgba(255, 255, 255, 0.08);
+        --glass-border: rgba(255, 255, 255, 0.12);
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    html,
+    body {
+        height: 100%;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.5;
+    }
+
+    .wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: linear-gradient(135deg, rgba(26, 26, 46, 0.9), rgba(22, 33, 62, 0.9));
+    }
+
+    .card {
+        background: var(--card-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 800px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+        animation: cardSlideUp 0.5s ease-out;
+    }
+
+    @keyframes cardSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .card-header {
+        padding: 30px;
+        background: linear-gradient(135deg, rgba(76, 201, 240, 0.1), rgba(99, 102, 241, 0.1));
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    .title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--fg);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .badge {
+        font-size: 14px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        font-weight: 600;
+        color: var(--muted);
+    }
+
+    .badge.accent {
+        background: var(--accent);
+        color: white;
+    }
+
+    .subtext {
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.6;
+        margin-top: 8px;
+    }
+
+    form {
+        padding: 30px;
+    }
+
+    .question-block {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .question-block:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .question-block.answered {
+        border-color: rgba(74, 222, 128, 0.5);
+        background: rgba(74, 222, 128, 0.05);
+    }
+
+    .question-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        gap: 16px;
+    }
+
+    .question-text {
+        font-size: 18px;
+        font-weight: 500;
+        color: var(--fg);
+        flex: 1;
+        line-height: 1.5;
+    }
+
+    .question-num {
+        font-size: 14px;
+        color: var(--muted);
+        background: var(--bg);
+        padding: 6px 12px;
+        border-radius: 12px;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .choices {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .choice-item {
+        flex: 1;
+        min-width: 140px;
+        position: relative;
+    }
+
+    .choice-item input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .choice-item span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 14px 20px;
+        background: var(--bg);
+        border: 2px solid var(--glass-border);
+        border-radius: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+        text-align: center;
+        min-height: 54px;
+    }
+
+    .choice-item:hover span {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .choice-item input:checked+span {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+        box-shadow: 0 4px 12px rgba(76, 201, 240, 0.3);
+    }
+
+    .choice-item input:focus+span {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+
+    .form-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-top: 40px;
+        padding-top: 24px;
+        border-top: 1px solid var(--glass-border);
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .left-hint {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .left-hint>div {
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: var(--muted);
+    }
+
+    .left-hint strong {
+        color: var(--fg);
+    }
+
+    .left-hint code {
+        background: var(--bg);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+        color: var(--accent);
+    }
+
+    .error-box {
+        display: none;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: var(--danger);
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-top: 12px;
+        font-weight: 500;
+        animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+
+        20%,
+        60% {
+            transform: translateX(-5px);
+        }
+
+        40%,
+        80% {
+            transform: translateX(5px);
+        }
+    }
+
+    .submit-btn {
+        background: linear-gradient(135deg, var(--accent), var(--secondary));
+        color: white;
+        border: none;
+        padding: 14px 32px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        box-shadow: 0 4px 12px rgba(76, 201, 240, 0.3);
+        min-width: 180px;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(76, 201, 240, 0.4);
+    }
+
+    .submit-btn:active {
+        transform: translateY(0);
+    }
+
+    .progress-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        padding: 0 10px;
+        flex-wrap: nowrap;
+    }
+
+    .progress-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--glass-bg);
+        border: 2px solid var(--glass-border);
+        transition: var(--transition);
+        flex-shrink: 0;
+    }
+
+
+    .progress-dot.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        transform: scale(1.2);
+    }
+
+    .progress-dot.answered {
+        background: var(--ok);
+        border-color: var(--ok);
+    }
+
+    .progress-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        padding: 0 10px;
+        flex-wrap: nowrap;
+    }
+
+    .progress-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--glass-bg);
+        border: 2px solid var(--glass-border);
+        transition: var(--transition);
+        flex-shrink: 0;
+    }
+
+    .progress-dot.active {
+        background: var(--ok);
+        /* green */
+        border-color: var(--ok);
+        transform: scale(1.15);
+    }
+
+    .progress-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), var(--secondary));
+        width: 0%;
+        transition: width 0.5s ease;
+    }
+
+    .progress-line {
+        flex: 1;
+        height: 2px;
+        background: var(--glass-border);
+        /* gray by default */
+        margin: 0 8px;
+        transition: var(--transition);
+        min-width: 24px;
+        /* make sure it's visible even on small screens */
+    }
+
+    .progress-line.active {
+        background: var(--ok);
+        /* turn green when passed */
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .wrapper {
+            padding: 10px;
+            align-items: flex-start;
+        }
+
+        .card {
+            border-radius: 16px;
+        }
+
+        .card-header,
+        form {
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+        }
+
+        .title-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .question-head {
+            flex-direction: column;
+        }
+
+        .question-num {
+            align-self: flex-end;
+        }
+
+        .choices {
+            flex-direction: column;
+        }
+
+        .choice-item {
+            min-width: 100%;
+        }
+
+        .form-footer {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .left-hint {
+            min-width: auto;
+            margin-bottom: 20px;
+        }
+
+        .submit-btn {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+
+        .card-header,
+        form {
+            padding: 16px;
+        }
+
+        h1 {
+            font-size: 22px;
+        }
+
+        .question-text {
+            font-size: 16px;
+        }
+    }

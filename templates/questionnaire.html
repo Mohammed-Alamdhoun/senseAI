@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AQ-10 Questionnaire</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='questionnaire.css') }}">
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="card">
+      <header class="card-header">
+        <div class="title-row">
+          <h1>
+            AQ-10 Questionnaire
+            <span class="badge">10 Questions</span>
+          </h1>
+
+          <div class="badge accent">
+            Section: {{ section_id }}
+          </div>
+        </div>
+
+        <p class="subtext">
+          Please answer each question by selecting "Yes" or "No".<br />
+          This is not a diagnostic test, but it can help identify whether a professional consultation might be useful.
+        </p>
+
+        <div class="progress-indicator">
+          {% for i in range(1, 11) %}
+          <div class="progress-dot" id="progressDot{{ i }}"></div>
+          {% if i < 10 %} <div class="progress-line" id="progressLine{{ i }}">
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    </header>
+
+    <form id="aq10-form" action="/questionnaire/submit" method="POST" novalidate>
+      <input type="hidden" name="section_id" value="{{ section_id }}" />
+
+      {% for qtext in questions %}
+      {% set idx = loop.index %}
+
+      <div class="question-block" id="question{{ idx }}" data-question="{{ idx }}">
+        <div class="question-head">
+          <div class="question-text">
+            {{ idx }}. {{ qtext }}
+          </div>
+          <div class="question-num">
+            {{ idx }}/10
+          </div>
+        </div>
+
+        <div class="choices">
+          <label class="choice-item">
+            <input type="radio" name="q{{ idx }}" value="1" required />
+            <span>Yes</span>
+          </label>
+
+          <label class="choice-item">
+            <input type="radio" name="q{{ idx }}" value="0" required />
+            <span>No</span>
+          </label>
+        </div>
+      </div>
+
+      {% endfor %}
+
+      <div class="form-footer">
+        <div class="left-hint">
+          <div><strong>Your privacy matters.</strong></div>
+          <div>Responses are used only for preliminary screening and can be linked with motion data via
+            <code>section_id</code>.</div>
+          <div class="error-box" id="form-error">Please answer all questions before continuing.</div>
+        </div>
+
+        <button type="submit" class="submit-btn">
+          Submit Answers
+        </button>
+      </div>
+    </form>
+  </div>
+  </div>
+
+  <script>
+    // Update progress indicator as questions are answered
+    const form = document.getElementById("aq10-form");
+    const errorBox = document.getElementById("form-error");
+
+    // Initialize progress
+    updateProgress();
+
+    // Add event listeners to all radio buttons
+    const radioButtons = document.querySelectorAll('input[type="radio"]');
+    radioButtons.forEach(radio => {
+      radio.addEventListener('change', function () {
+        const questionNumber = this.name.substring(1);
+        const questionBlock = document.getElementById(`question${questionNumber}`);
+
+        // Add answered class to question block
+        questionBlock.classList.add('answered');
+
+        // Update progress dot
+        const progressDot = document.getElementById(`progressDot${questionNumber}`);
+        progressDot.classList.add('answered');
+
+        // Update progress bar
+        updateProgress();
+      });
+    });
+
+    function updateProgress() {
+      const totalQuestions = 10;
+      let answeredCount = 0;
+
+      function updateProgress() {
+        const totalQuestions = 10;
+        let answeredCount = 0;
+
+        // Count how many questions have at least one radio selected
+        for (let i = 1; i <= totalQuestions; i++) {
+          const group = form.querySelectorAll('input[name="q' + i + '"]');
+          const anyChecked = Array.from(group).some(r => r.checked);
+          if (anyChecked) {
+            answeredCount++;
+          }
+        }
+
+        // Update dots
+        for (let i = 1; i <= totalQuestions; i++) {
+          const dot = document.getElementById(`progressDot${i}`);
+          if (i <= answeredCount) {
+            dot.classList.add('active');
+          } else {
+            dot.classList.remove('active');
+          }
+        }
+
+        // Update connecting lines between dots
+        // line1 is between question1 and question2
+        // so we activate lineN if BOTH qN and q(N+1) are answered
+        for (let i = 1; i < totalQuestions; i++) {
+          const line = document.getElementById(`progressLine${i}`);
+          if (!line) continue;
+
+          // we'll say a line is active if we've answered at least i+1 questions
+          // e.g. answeredCount = 3 -> line1 + line2 go green
+          if (answeredCount >= i + 1) {
+            line.classList.add('active');
+          } else {
+            line.classList.remove('active');
+          }
+        }
+      }
+
+      // Update progress bar
+      const progressPercent = (answeredCount / totalQuestions) * 100;
+
+      // Update progress dots
+      for (let i = 1; i <= totalQuestions; i++) {
+        const progressDot = document.getElementById(`progressDot${i}`);
+        if (i <= answeredCount) {
+          progressDot.classList.add('active');
+        } else {
+          progressDot.classList.remove('active');
+        }
+      }
+    }
+
+    // Validate that all 10 questions have been answered before submitting
+    form.addEventListener("submit", function (e) {
+      const totalQuestions = 10;
+      let allAnswered = true;
+
+      for (let i = 1; i <= totalQuestions; i++) {
+        const group = form.querySelectorAll('input[name="q' + i + '"]');
+        const anyChecked = Array.from(group).some(r => r.checked);
+        if (!anyChecked) {
+          allAnswered = false;
+          // Highlight unanswered question
+          const questionBlock = document.getElementById(`question${i}`);
+          questionBlock.style.borderColor = 'var(--danger)';
+          questionBlock.scrollIntoView({ behavior: "smooth", block: "center" });
+          break;
+        }
+      }
+
+      if (!allAnswered) {
+        e.preventDefault();
+        errorBox.style.display = "block";
+        errorBox.textContent = "Please answer all questions before continuing.";
+        errorBox.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        errorBox.style.display = "none";
+      }
+    });
+  </script>
+</body>
+
+</html>

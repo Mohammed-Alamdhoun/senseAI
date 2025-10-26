@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>SenseAI - Pose Tracking</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+</head>
+
+<body data-section="session_001">
+    <!-- Top nav -->
+    <nav class="navbar">
+        <div class="navbar-title">SenseAI</div>
+        <div class="navbar-actions">
+            <button class="btn-info" id="infoBtn">ℹ️ How It Works</button>
+        </div>
+    </nav>
+
+    <!-- Info modal -->
+    <div class="modal-overlay" id="infoModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span>How to Use This System</span>
+                <button class="modal-close" id="closeInfoModal">&times;</button>
+            </div>
+            <div class="modal-content">
+                <p>
+                    Welcome to the Sense AI Autism Detection System. The process consists of up to three phases designed
+                    to ensure accurate movement tracking and meaningful evaluation.
+                </p>
+
+                <h3>Phase 1 — Exercise Recording (Required)</h3>
+                <ol>
+                    <li><strong>Prepare:</strong> Make sure your full body is visible to the camera, with good lighting
+                        and a neutral background. Wear clothing that contrasts with your surroundings.</li>
+                    <li><strong>Select an Activity:</strong> From the Activities panel, choose an exercise and review
+                        the short demonstration video to understand the movement.</li>
+                    <li><strong>Start Recording:</strong> Click <em>“Start Recording”</em> to begin. The system will
+                        display a live skeleton overlay as it tracks your movements.</li>
+                    <li><strong>Perform & Stop:</strong> Mimic the movement shown in the reference video. When you’re
+                        done, click <em>“Stop Recording.”</em> Each recording can last up to 1 minute.</li>
+                    <li><strong>Minimum Requirement:</strong> You must complete at least <strong>six (6) recorded
+                            sessions</strong> before proceeding to the next phase.</li>
+                </ol>
+
+                <h3>Phase 2 — Caregiver or Clinician Questionnaire</h3>
+                <ol>
+                    <li><strong>Who fills it out:</strong> This phase is completed by a clinician, therapist, or
+                        caregiver after the user finishes at least 6 recorded sessions.</li>
+                    <li><strong>Purpose:</strong> The questionnaire collects behavioral and performance observations
+                        related to the recorded exercises.</li>
+                    <li><strong>How it works:</strong> Click <em>“Proceed to Questionnaire”</em> after 6 sessions. Fill
+                        in each question carefully, reflecting the participant’s activity and engagement.</li>
+                    <li><strong>Data usage:</strong> The answers help the AI model correlate observed motion patterns
+                        with qualitative feedback to improve accuracy.</li>
+                </ol>
+
+                <h3>Phase 3 — Confidence Verification (Optional)</h3>
+                <p>
+                    If the AI model detects <strong>uncertainty</strong> or conflicting responses in Phase 2, it will
+                    automatically trigger an additional short <strong>Follow-Up Questionnaire</strong> focused on
+                    specific unclear aspects.
+                </p>
+                <ul>
+                    <li>Only shown when the model’s confidence is low or data appears inconsistent.</li>
+                    <li>Consists of 3–5 targeted questions.</li>
+                    <li>Helps refine the model’s understanding and improve report reliability.</li>
+                </ul>
+
+                <h3>Tips for Best Results</h3>
+                <ul>
+                    <li>Ensure stable camera placement and full-body visibility.</li>
+                    <li>Perform movements slowly and clearly for accurate skeleton detection.</li>
+                    <li>Maintain consistent lighting and minimize background distractions.</li>
+                    <li>Repeat an exercise if tracking seems unstable or incomplete.</li>
+                </ul>
+
+                <h3>Privacy Notice</h3>
+                <p>
+                    All video data is processed locally. The system stores <strong>only skeletal keypoints</strong> (no
+                    facial or personal images) to maintain privacy and data protection.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page main content -->
+    <div class="page">
+        <div class="row layout">
+
+            <!-- LEFT COLUMN: video + questionnaire -->
+            <div class="col-left">
+
+                <!-- Live video / skeleton card -->
+                <div class="card video-card">
+                    <div class="video-wrap" id="wrap">
+                        <img id="video" class="video" src="/video" alt="Live stream" crossorigin="anonymous" />
+                        <canvas id="overlay"></canvas>
+                    </div>
+                </div>
+
+                <!-- Questionnaire Card -->
+                <div class="card questionnaire-card" id="questionnaireCard">
+                    <div class="questionnaire-header">
+                        <div class="questionnaire-title-section">
+                            <h3>Next Step: Caregiver / Clinician Questionnaire</h3>
+                            <div class="badge badge-accent">Phase 2</div>
+                        </div>
+                    </div>
+
+                    <div class="questionnaire-content">
+                        <p class="questionnaire-description">
+                            You can proceed to the next phase once at least six recordings are completed.
+                        </p>
+
+                        <div class="progress-section">
+                            <div class="progress-info">
+                                <span class="progress-label">Recording Progress</span>
+                                <span class="progress-count">0/6 complete</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="questionnaire-actions">
+                            <a href="/questionnaire?section_id={{ section_id or 'session_001' }}"
+                                class="btn btn-questionnaire" id="questionnaireBtn"
+                                style="opacity:0.6; pointer-events:none;">
+                                <span class="btn-icon">→</span>
+                                Proceed to Questionnaire
+                            </a>
+                            <div class="requirement-hint">
+                                <span class="hint-icon">ℹ️</span>
+                                Complete 6 recordings to unlock
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- /questionnaireCard -->
+
+            </div> <!-- /col-left -->
+
+
+            <!-- RIGHT COLUMN: activities -->
+            <div class="col-right">
+                <div class="card activities-card">
+                    <div class="activities-header">
+                        <div>Activities</div>
+                        <span class="badge">Select one to guide your session</span>
+                    </div>
+
+                    <div class="activities-container">
+                        <!-- Detail side panel -->
+                        <div class="activity-detail-view" id="detailView">
+                            <div class="detail-video-wrap">
+                                <video id="detailVideo" autoplay loop muted playsinline></video>
+                            </div>
+                            <div class="detail-content">
+                                <h3 class="detail-title" id="detailTitle"></h3>
+                                <p class="detail-desc" id="detailDesc"></p>
+                                <div class="detail-timer" id="detailTimer">00:00</div>
+                                <div class="max-time-notice">Maximum recording time: 1 minute</div>
+                                <div class="detail-actions">
+                                    <button class="btn btn-record" id="recordBtn">⏺ Start Recording</button>
+                                    <button class="btn btn-reset" id="resetVideo">Reset Video</button>
+                                    <button class="btn btn-close" id="closeDetail">Close</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grid of all activities -->
+                        <div class="activities-grid" id="activities"></div>
+                    </div>
+                </div> <!-- /activities-card -->
+            </div> <!-- /col-right -->
+
+        </div> <!-- /row.layout -->
+    </div> <!-- /page -->
+
+    <script>
+        const ACTIVITIES = [
+            {
+                id: 'arm_swing',
+                title: 'Arm Swing',
+                desc: 'The participant raises their left and right arm in succession while maintaining an upright posture',
+                src: '/static/activities/arm_swing.mp4',
+                poster: '/static/activities/arm_swing.png'
+            },
+            {
+                id: 'body_swing',
+                title: 'Body Swing',
+                desc: 'The participant swings their upper body gently from side to side while stretching both arms, keeping one arm in front and the other behind in alternation. Encourages torso flexibility and spatial awareness.',
+                src: '/static/activities/body_swing.mp4',
+                poster: '/static/activities/body_swing.png'
+            },
+            {
+                id: 'chest_expansion',
+                title: 'Chest Expansion',
+                desc: 'The participant gradually opens and closes their chest by moving their arms outward and inward, synchronizing with breathing to improve posture and chest mobility.',
+                src: '/static/activities/chest_expansion.mp4',
+                poster: '/static/activities/chest_expansion.png'
+            },
+            {
+                id: 'drumming',
+                title: 'Drumming',
+                desc: 'The participant rhythmically plays a drum, such as a snare or Tubano, using one or both hands. This activity develops timing, focus, and bilateral coordination.',
+                src: '/static/activities/drumming.mp4',
+                poster: '/static/activities/drumming.png'
+            },
+            {
+                id: 'frog_pose',
+                title: 'Frog Pose',
+                desc: 'In a kneeling position, the participant spreads their knees wide apart, brings their big toes together behind them, and lowers their hips toward the floor, resembling a frog shape. Encourages hip flexibility and balance.',
+                src: '/static/activities/frog_pose.mp4',
+                poster: '/static/activities/frog_pose.png'
+            },
+            {
+                id: 'maracas_forward',
+                title: 'Maracas Forward Shaking',
+                desc: 'The participant shakes maracas back and forth in a rhythmic pattern, engaging the upper limbs and enhancing fine motor control and timing.',
+                src: '/static/activities/maracas_forward.mp4',
+                poster: '/static/activities/maracas_forward.png'
+            },
+            {
+                id: 'maracas_side',
+                title: 'Maracas Shaking',
+                desc: 'The participant shakes maracas left and right in front of the chest, maintaining a steady rhythm and balanced motion on both sides of the body.',
+                src: '/static/activities/maracas_shake.mp4',
+                poster: '/static/activities/maracas_side.png'
+            },
+            {
+                id: 'sing_clap',
+                title: 'Sing & Clap',
+                desc: 'While sitting, the participant sings and claps their hands rhythmically, often performed at the start or end of a session to encourage engagement and joy.',
+                src: '/static/activities/sing_clap.mp4',
+                poster: '/static/activities/sing_clap.png'
+            },
+            {
+                id: 'squat',
+                title: 'Squat',
+                desc: 'The participant repeatedly bends their knees into a crouching position and returns to standing. This strengthens the legs and improves lower-body coordination.',
+                src: '/static/activities/squat.mp4',
+                poster: '/static/activities/squat.png'
+            },
+            {
+                id: 'tree_pose',
+                title: 'Tree Pose',
+                desc: 'The participant balances on one leg while placing the sole of the other foot on the inner thigh, calf, or ankle of the standing leg. Promotes focus, balance, and body stability.',
+                src: '/static/activities/tree_pose.mp4',
+                poster: '/static/activities/tree_pose.png'
+            },
+            {
+                id: 'twist_pose',
+                title: 'Twist Pose',
+                desc: 'The participant sits cross-legged and gently twists the upper body to the right and left, keeping the lower body stable. Enhances spine flexibility and relaxation.',
+                src: '/static/activities/twist_pose.mp4',
+                poster: '/static/activities/twist_pose.png'
+            }
+        ];
+
+        const JOINTS = [
+            "nose", "l_eye", "r_eye", "l_ear", "r_ear",
+            "l_shoulder", "r_shoulder", "l_elbow", "r_elbow",
+            "l_wrist", "r_wrist", "l_hip", "r_hip",
+            "l_knee", "r_knee", "l_ankle", "r_ankle"
+        ];
+
+        const EDGES = [
+            [5, 6], [5, 7], [7, 9], [6, 8], [8, 10],
+            [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
+            [0, 1], [0, 2], [1, 3], [2, 4], [5, 11], [6, 12]
+        ];
+
+        const SECTION_ID = document.body.dataset.section || 'session_001';
+        const img = document.getElementById('video');
+        const wrap = document.getElementById('wrap');
+        const canvas = document.getElementById('overlay');
+        const ctx = canvas.getContext('2d');
+
+        let thr = 0.20;
+        let alpha = 0.60;
+        let lw = 2;
+        let showOverlay = true;
+        let lastJson = null;
+        let ema = null;
+        let lastTick = performance.now();
+        let fpsEMA = null;
+
+        // -------------------- Recording UI/State + API --------------------
+        const recordingState = {};     // activityId -> bool
+        const recordingTimers = {};    // activityId -> seconds
+        const recordingIntervals = {}; // activityId -> intervalId
+        const recordingCredit = {};
+        let currentActivityId = null;
+
+        const actGrid = document.getElementById('activities');
+        const detailView = document.getElementById('detailView');
+        const detailVideo = document.getElementById('detailVideo');
+        const detailTitle = document.getElementById('detailTitle');
+        const detailDesc = document.getElementById('detailDesc');
+        const detailTimer = document.getElementById('detailTimer');
+        const closeDetailBtn = document.getElementById('closeDetail');
+        const resetVideoBtn = document.getElementById('resetVideo');
+        const recordBtn = document.getElementById('recordBtn');
+
+        const infoBtn = document.getElementById('infoBtn');
+        const infoModal = document.getElementById('infoModal');
+        const closeInfoModal = document.getElementById('closeInfoModal');
+
+        // ---- Questionnaire Progress Tracking ----
+        let completedRecordings = 0;
+        const totalRequired = 6;
+
+        // ---- Canvas Setup ----
+        function fitCanvas() {
+            const r = wrap.getBoundingClientRect();
+            const dpr = Math.max(1, window.devicePixelRatio || 1);
+            canvas.width = Math.floor(r.width * dpr);
+            canvas.height = Math.floor(r.height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        window.addEventListener('resize', fitCanvas);
+        img.addEventListener('load', fitCanvas);
+        fitCanvas();
+
+        // ---- Pose Detection Polling ----
+        async function poll() {
+            try {
+                const t0 = performance.now();
+                const res = await fetch('/pose.json', { cache: 'no-cache' });
+                const j = await res.json();
+                const t1 = performance.now();
+
+                if (j && j.ok) {
+                    lastJson = j;
+                    const dt = t1 - lastTick;
+                    lastTick = t1;
+                    const instFPS = dt > 0 ? 1000 / dt : 0;
+                    fpsEMA = fpsEMA == null ? instFPS : 0.9 * fpsEMA + 0.1 * instFPS;
+                    render(j);
+                }
+            } catch (e) {
+                console.error('Error fetching pose data:', e);
+            } finally {
+                setTimeout(poll, 33);
+            }
+        }
+        poll();
+
+        // ---- Pose Rendering ----
+        function render(j) {
+            fitCanvas();
+            const w = canvas.width / (window.devicePixelRatio || 1);
+            const h = canvas.height / (window.devicePixelRatio || 1);
+            ctx.clearRect(0, 0, w, h);
+
+            if (!showOverlay || !j || !j.coco17_keypoints_xy) return;
+
+            const xy = j.coco17_keypoints_xy;
+            const sc = j.coco17_scores || new Array(17).fill(1);
+            const { width: srcW, height: srcH } = j;
+            const scale = Math.min(w / srcW, h / srcH);
+            const dw = srcW * scale, dh = srcH * scale;
+            const ox = (w - dw) / 2, oy = (h - dh) / 2;
+
+            if (!ema) ema = xy.map(p => p.slice());
+            else {
+                for (let i = 0; i < 17; i++) {
+                    ema[i][0] = alpha * xy[i][0] + (1 - alpha) * ema[i][0];
+                    ema[i][1] = alpha * xy[i][1] + (1 - alpha) * ema[i][1];
+                }
+            }
+
+            const pts = ema.map(([x, y]) => [ox + x * scale, oy + y * scale]);
+
+            ctx.lineWidth = lw;
+            ctx.strokeStyle = '#4cc9f0';
+            ctx.fillStyle = '#4ade80';
+
+            for (const [a, b] of EDGES) {
+                if ((sc[a] ?? 1) >= thr && (sc[b] ?? 1) >= thr) {
+                    const [x1, y1] = pts[a];
+                    const [x2, y2] = pts[b];
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                }
+            }
+
+            for (let i = 0; i < 17; i++) {
+                if ((sc[i] ?? 1) >= thr) {
+                    const [x, y] = pts[i];
+                    ctx.beginPath();
+                    ctx.arc(x, y, 3.5 + lw * 0.3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // ---- API helpers (talk to Flask) ----
+        async function apiStart(sectionId, activityId) {
+            const res = await fetch('/record/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ section_id: sectionId, activity_id: activityId })
+            });
+            return res.json();
+        }
+
+        async function apiStop() {
+            const res = await fetch('/record/stop', { method: 'POST' });
+            return res.json();
+        }
+
+        async function apiReset() {
+            const res = await fetch('/record/reset', { method: 'POST' });
+            return res.json();
+        }
+
+        // ---- Recording State Management ----
+        function getActiveRecordingId() {
+            return Object.keys(recordingState).find(id => recordingState[id]);
+        }
+
+        function isAnotherRecording(activityId) {
+            const active = getActiveRecordingId();
+            return active && active !== activityId;
+        }
+
+        // ---- Timer helpers ----
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function startDetailTimer(activityId) {
+            stopDetailTimer();
+            recordingTimers[activityId] = 0;
+            detailTimer.textContent = '00:00';
+            detailTimer.classList.remove('warning');
+            detailTimer.classList.add('recording');
+
+            recordingIntervals[activityId] = setInterval(() => {
+                recordingTimers[activityId]++;
+                detailTimer.textContent = formatTime(recordingTimers[activityId]);
+
+                // Auto-stop at 60s: stop on server + stop UI
+                if (recordingTimers[activityId] >= 60) {
+                    apiStop()
+                        .then((j) => {
+                            if (!j?.ok) {
+                                console.warn('Server stop failed on auto-stop:', j?.error);
+                            }
+                        })
+                        .catch(console.error);
+
+                    stopRecording(activityId);
+
+                    // IMPORTANT:
+                    // Do NOT decrement here.
+                    // Auto-stop should behave like manual stop:
+                    // counter stays the same.
+
+                    alert('Recording stopped automatically after 1 minute.');
+                } else if (recordingTimers[activityId] >= 45) {
+                    detailTimer.classList.add('warning');
+                }
+            }, 1000);
+        }
+
+        function stopRecording(activityId) {
+            recordingState[activityId] = false;
+            stopDetailTimer();
+
+            console.log(`Stopped recording: ${activityId}, Duration: ${recordingTimers[activityId]}s`);
+
+            renderActivities();
+
+            if (detailView.classList.contains('active') && currentActivityId === activityId) {
+                detailTimer.classList.remove('recording', 'warning');
+                recordBtn.textContent = '⏺ Start Recording';
+                recordBtn.classList.remove('recording');
+                recordBtn.disabled = false;
+                recordBtn.title = '';
+            }
+        }
+
+        function stopDetailTimer() {
+            detailTimer.classList.remove('recording', 'warning');
+            Object.keys(recordingIntervals).forEach(key => {
+                clearInterval(recordingIntervals[key]);
+                delete recordingIntervals[key];
+            });
+        }
+
+        // ---- Details panel ----
+        function showDetails(activity) {
+            currentActivityId = activity.id;
+
+            detailVideo.src = activity.src;
+            if (activity.poster) {
+                detailVideo.setAttribute('poster', activity.poster);
+            }
+
+            detailVideo.load();
+            detailVideo.play().catch(() => { });
+
+            detailTitle.textContent = activity.title;
+            detailDesc.textContent = activity.desc;
+
+            if (recordingState[activity.id]) {
+                detailTimer.textContent = formatTime(recordingTimers[activity.id] || 0);
+                detailTimer.classList.add('recording');
+                recordBtn.textContent = '⏹ Stop Recording';
+                recordBtn.classList.add('recording');
+            } else {
+                detailTimer.textContent = formatTime(recordingTimers[activity.id] || 0);
+                detailTimer.classList.remove('recording', 'warning');
+                recordBtn.textContent = '⏺ Start Recording';
+                recordBtn.classList.remove('recording');
+            }
+
+            detailView.classList.add('active');
+
+            const active = getActiveRecordingId();
+            recordBtn.disabled = !!active && active !== activity.id;
+            recordBtn.title = recordBtn.disabled
+                ? 'Another activity is currently recording. Stop it first.'
+                : '';
+        }
+
+
+        // ---- Start/Stop toggle with server calls ----
+        async function toggleRecording(activityId) {
+            const isRecording = recordingState[activityId];
+
+            // Block starting if another activity is already recording
+            if (!isRecording && isAnotherRecording(activityId)) {
+                const active = getActiveRecordingId();
+                const activeTitle = (ACTIVITIES.find(a => a.id === active) || {}).title || active;
+                alert(`Another activity is currently recording: "${activeTitle}". Stop it first before starting a new one.`);
+                return;
+            }
+
+            if (isRecording) {
+                // STOP
+                try {
+                    const j = await apiStop();
+                    if (!j.ok) {
+                        alert(j.error || 'Failed to stop recording on server.');
+                        return;
+                    }
+
+                    console.log('Saved file:', j.saved);
+
+                    // stop UI state
+                    stopRecording(activityId);
+
+                    // IMPORTANT:
+                    // Do NOT decrease completedRecordings here.
+                    // We leave the counter as-is.
+                    // Only resetVideo() is allowed to decrement.
+
+                } catch (e) {
+                    console.error(e);
+                    alert('Network error while stopping.');
+                }
+            } else {
+                // START
+                try {
+                    const j = await apiStart(SECTION_ID, activityId);
+                    if (!j.ok) {
+                        alert(j.error || 'Failed to start recording on server.');
+                        return;
+                    }
+
+                    recordingState[activityId] = true;
+                    recordingTimers[activityId] = 0;
+                    startDetailTimer(activityId);
+
+                    console.log(`Started recording: ${activityId}`);
+                    renderActivities();
+
+                    const currentActivity = ACTIVITIES.find(a => a.id === activityId);
+                    if (detailView.classList.contains('active') && detailTitle.textContent === currentActivity.title) {
+                        detailTimer.classList.add('recording');
+                        recordBtn.textContent = '⏹ Stop Recording';
+                        recordBtn.classList.add('recording');
+                    }
+
+                    // INCREMENT when starting, but only once per activity "session"
+                    if (recordingCredit[activityId] !== 1) {
+                        recordingCredit[activityId] = 1;
+                        completedRecordings = Math.min(totalRequired, completedRecordings + 1);
+                        updateQuestionnaireProgress();
+                    }
+
+                } catch (e) {
+                    console.error(e);
+                    alert('Network error while starting.');
+                }
+            }
+        }
+
+        // ---- Questionnaire Progress Management ----
+        function updateQuestionnaireProgress() {
+            const progressFill = document.querySelector('.progress-fill');
+            const progressCount = document.querySelector('.progress-count');
+            const questionnaireCard = document.getElementById('questionnaireCard');
+            const questionnaireBtn = document.getElementById('questionnaireBtn');
+
+            // percentage for the bar
+            const percentage = Math.min((completedRecordings / totalRequired) * 100, 100);
+
+            if (progressFill) {
+                progressFill.style.width = `${percentage}%`;
+            }
+
+            if (progressCount) {
+                // you can change "complete" to "comp" if you want shorter display
+                progressCount.textContent = `${completedRecordings}/${totalRequired} complete`;
+            }
+
+            if (questionnaireCard && questionnaireBtn) {
+                if (completedRecordings >= totalRequired) {
+                    questionnaireCard.classList.add('completed');
+                    questionnaireBtn.style.opacity = '1';
+                    questionnaireBtn.style.pointerEvents = 'auto';
+                } else {
+                    questionnaireCard.classList.remove('completed');
+                    questionnaireBtn.style.opacity = '0.6';
+                    questionnaireBtn.style.pointerEvents = 'none';
+                }
+            }
+        }
+
+        // ---- Activities grid ----
+        function renderActivities() {
+            actGrid.innerHTML = '';
+            const activeId = getActiveRecordingId();
+
+            ACTIVITIES.forEach(act => {
+                const isRecording = recordingState[act.id];
+                const el = document.createElement('div');
+                el.className = 'activity' + (isRecording ? ' recording' : '');
+
+                el.innerHTML = `
+            <video
+                src="${act.src}"
+                playsinline
+                muted
+                loop
+                preload="metadata"
+                ${act.poster ? `poster="${act.poster}"` : ''}
+            ></video>
+            <div class="activity-body">
+                <div class="activity-title">${act.title}</div>
+                <div class="activity-desc">${act.desc}</div>
+                <div class="activity-actions">
+                    <button class="btn btn-details">View Details</button>
+                </div>
+            </div>
+        `;
+
+                const v = el.querySelector('video');
+                el.addEventListener('mouseenter', () => v.play().catch(() => { }));
+                el.addEventListener('mouseleave', () => v.pause());
+
+                // Disable opening details while another activity is recording
+                const detailsBtn = el.querySelector('.btn-details');
+                const lockedByAnother = !!activeId && activeId !== act.id;
+                detailsBtn.disabled = lockedByAnother;
+                detailsBtn.title = lockedByAnother ? 'Another activity is currently recording. Stop it to switch.' : '';
+
+                detailsBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showDetails(act);
+                });
+
+                actGrid.appendChild(el);
+            });
+        }
+
+        // ---- Event Listeners ----
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize questionnaire progress
+            updateQuestionnaireProgress();
+
+            // Navbar / Modals
+            infoBtn.addEventListener('click', () => infoModal.classList.add('active'));
+            closeInfoModal.addEventListener('click', () => infoModal.classList.remove('active'));
+            infoModal.addEventListener('click', (e) => {
+                if (e.target === infoModal) infoModal.classList.remove('active');
+            });
+
+            // Detail view buttons
+            closeDetailBtn.addEventListener('click', () => {
+                detailView.classList.remove('active');
+                detailVideo.pause();
+                stopDetailTimer();
+            });
+
+            // Reset: also reset server buffer if recording is active
+            resetVideoBtn.addEventListener('click', async () => {
+                // Always reset the demo clip position
+                if (detailVideo.src) {
+                    detailVideo.currentTime = 0;
+                    detailVideo.play().catch(() => { });
+                }
+
+                const active = getActiveRecordingId();
+                if (active) {
+                    try {
+                        const j = await apiReset();
+                        if (!j.ok) {
+                            alert(j.error || 'Failed to reset on server.');
+                            return;
+                        }
+
+                        // Reset server buffer, reset local timer to 00:00
+                        recordingTimers[active] = 0;
+                        if (currentActivityId === active) {
+                            detailTimer.textContent = '00:00';
+                            detailTimer.classList.add('recording');
+                            detailTimer.classList.remove('warning');
+                        }
+
+                        // NOW: this is where we DECREASE the counter.
+                        // We only decrease if this recording was previously credited.
+                        if (recordingCredit[active] === 1) {
+                            recordingCredit[active] = 0;
+                            completedRecordings = Math.max(0, completedRecordings - 1);
+                            updateQuestionnaireProgress();
+                        }
+
+                    } catch (e) {
+                        console.error(e);
+                        alert('Network error while resetting.');
+                    }
+                }
+            });
+
+            recordBtn.addEventListener('click', () => {
+                if (currentActivityId) toggleRecording(currentActivityId);
+            });
+
+            // Initial render
+            renderActivities();
+        });
+
+        // ---- Global exports for debugging ----
+        window.getRecordingState = () => recordingState;
+        window.getRecordingTimers = () => recordingTimers;
+        window.getCompletedRecordings = () => completedRecordings;
+    </script>
+</body>
+
+</html>
